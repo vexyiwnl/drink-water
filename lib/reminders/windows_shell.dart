@@ -83,6 +83,11 @@ class WindowsShell with WindowListener {
   void onWindowClose() => windowManager.hide();
 
   Future<void> _tick() async {
+    // After boot, wait for the first sync: drinks logged on the phone while the PC
+    // was off would otherwise look missing and trigger a stale reminder. A failed
+    // sync (offline) also counts, so reminders still run on local data.
+    final sync = syncService.state.value;
+    if (syncService.signedIn && sync.lastSync == null && sync.error == null) return;
     final plan = await loadPlan(appDb);
     if (plan == null) return;
     final slot = dueSlot(plan.last, plan.interval, DateTime.now());
